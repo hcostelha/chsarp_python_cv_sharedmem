@@ -57,31 +57,18 @@ public class MultiProcessShMemWithPython
                 {
                     // Try to gain control of the named mutex. If the mutex is 
                     // controlled by another thread, wait for it to be released.        
-                    Console.WriteLine("Waiting for the Mutex.");
+                    //Console.WriteLine("Waiting for the Mutex.");
                     m.WaitOne();
-
-                    // Keep control of the mutex until the user presses 'q'
-                    Console.WriteLine("This application owns the mutex. " +
-                        "Press q to release the mutex and exit.");
-                    if(Console.KeyAvailable)
-                    {
-                        if(Console.ReadKey().KeyChar == 'q')
-                        {
-                            Console.WriteLine("Exiting...");
-                            break;
-                        }
-                    }
-                    //image = cam.QueryFrame();
                     if (cam.Read(image) == false) Console.WriteLine("Unable to acquire frame...");
+                    m.ReleaseMutex();
                     CvInvoke.Imshow(wname, image);
-                    key = CvInvoke.WaitKey(5);  //Wait for the key pressing event
+                    key = CvInvoke.WaitKey(20);  //Wait for the key pressing event
                     if(key == 'q')
                     {
-                        Console.WriteLine("Exiting...");
+                        //Console.WriteLine("Exiting...");
                         break;
                     }
-                    m.ReleaseMutex();
-                    Console.WriteLine("Mutex released.");
+                    //Console.WriteLine("Mutex released.");
                     //Thread.Sleep(2000);
                 }
                 accessor_view.SafeMemoryMappedViewHandle.ReleasePointer();

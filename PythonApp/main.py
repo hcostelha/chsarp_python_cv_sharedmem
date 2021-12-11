@@ -11,37 +11,6 @@ import numpy as np
 import cv2 as cv
 
 
-
-
-mymap = mmap.mmap(fileno=-1 ,tagname='mySharedMem', length=480*640*3*2, access=mmap.ACCESS_READ)
-img = np.ndarray((480, 640, 3), dtype=np.uint8, buffer=mymap)
-cv.namedWindow('Process 1')
-
-print('Starting process and creating mutex...')
-mutex = namedmutex.NamedMutex('MyMutex', existing=True, acquire=False)
-print('Mutex created.')
-while True:
-    #print('Attempting to acquire...')
-    mutex.acquire(4)
-    if mutex.acquired:
-        cv.imshow('Process 1', img)
-        mutex.release()
-        if cv.waitKey(5) == 27:
-            break
-        #time.sleep(3.0)
-    else:
-        print('Unable to acquire mutex....')
-
-
-
-
-
-
-
-
-
-
-
 # Function to run consumer process 1
 def process1(cons_queue, shared_frame_arr, shared_buffer_shape,
              shared_latest_cam_buffer_idx, shared_buffers_idx_in_use):
@@ -152,19 +121,32 @@ if __name__ == '__main__':
     # Number processes accessing the camera images
     NUM_PROCESSES = 2
     NUM_FRAME_BUFFERS = NUM_PROCESSES + 2
+    frame_width = 640
+    frame_height = 480
+    fps = 30
 
-    # Access camera
-    cap = cv.VideoCapture(0)
+    # Access shared memory
+    mymap = mmap.mmap(fileno=-1, tagname='mySharedMem',
+                      length=frame_height*frame_width*3*2,
+                      access=mmap.ACCESS_READ)
+    rgb_frame = np.ndarray((frame_height, frame_width, 3),
+                           dtype=np.uint8, buffer=mymap)
+
+    # Get the shared mutex
+    mutex = namedmutex.NamedMutex('MyMutex', existing=True, acquire=False)
+
     cv.namedWindow('Main process')
-    fps = cap.get(cv.CAP_PROP_FPS)
     print(f'Expected FPS: {fps}')
 
-    # Confirm we are able to acquire images (and initialize the frame variable)
-    ret, rgb_frame = cap.read()
-    if ret is False:
-        print('Error, unable to acquire frame...')
+    # Confirm we are able to acquire images (and initialize the grayscale frame
+    # variable)
+    mutex.acquire(10)
+    if mutex.acquired:
+        gray_frame = cv.cvtColor(rgb_frame, cv.COLOR_BGR2GRAY)
+        mutex.release()
+    else:
+        print('Unable to acquire mutex....')
         exit(0)
-    gray_frame = cv.cvtColor(rgb_frame, cv.COLOR_BGR2GRAY)
 
     # Create the shared array for the camera image
     shared_buffer_shape = (
@@ -223,16 +205,16 @@ if __name__ == '__main__':
         if next_cam_buffer_idx == -1:
             raise RuntimeError('No available buffer index!')
 
-        # Acquire and store image in the chosen shared frame buffer. We do not
-        # need to lock this access, because no other process is currently using
-        # it.
-        ret, _ = cap.read(rgb_frame)
-        if ret is False:
-            print('Error, unable to acquire frame...')
-            exit(0)
-        cv.cvtColor(src=rgb_frame, code=cv.COLOR_BGR2GRAY,
-                    dst=gray_frame_buffer[next_cam_buffer_idx, :, :])
-
+        # Access the image in the shared memory.
+        mutex.acquire(4)
+        if mutex.acquired:
+            cv.cvtColor(src=rgb_frame, code=cv.COLOR_BGR2GRAY,
+                        dst=gray_frame_buffer[next_cam_buffer_idx, :, :])
+            mutex.release()
+        else:
+            print('Unable to acquire mutex....')
+            continue
+            
         # Updated the latest frame buffer index
         with shared_latest_cam_buffer_idx:
             shared_latest_cam_buffer_idx.value = next_cam_buffer_idx
