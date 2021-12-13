@@ -133,23 +133,15 @@ if __name__ == '__main__':
     rgbmap = mmap.mmap(fileno=-1, tagname='mySharedMem',
                       length=frame_height*bgr_step_size + frame_height*gray_step_size,
                       access=mmap.ACCESS_READ)
-    #rgb_frame = np.ndarray((frame_height, frame_width, num_channels),
-    #                       dtype=np.uint8, buffer=np.frombuffer(rgbmap[0:]))
     rgb_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
-                              count=frame_height*bgr_step_size, offset=0)
-    rgb_frame.shape = (frame_height, frame_width, num_channels)
+                              count=frame_height*bgr_step_size, offset=0
+                             ).reshape(frame_height, frame_width, num_channels)
     
     # Grayscale image
-    #graymap = mmap.mmap(fileno=-1, tagname='mySharedMem',
-    #                  length=frame_height*gray_step_size,
-    #                  offset=frame_height*bgr_step_size,
-    #                  access=mmap.ACCESS_READ)
-    #gray_frame = np.ndarray((frame_height, frame_width),
-    #                       dtype=np.uint8,
-    #                       buffer=rgbmap[frame_height*bgr_step_size:])
     gray_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
-                              count=frame_height*gray_step_size,
-                              offset=frame_height*bgr_step_size).reshape((frame_height, frame_width))
+                               count=frame_height*gray_step_size,
+                               offset=frame_height*bgr_step_size
+                              ).reshape((frame_height, frame_width))
 
     # Get the shared mutex
     mutex = namedmutex.NamedMutex('MyMutex', existing=True, acquire=False)

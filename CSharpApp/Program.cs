@@ -20,9 +20,9 @@ public class MultiProcessShMemWithPython
         // Frames per second
         if (cam.Set(CapProp.Fps, fps) == false) Console.WriteLine("Unable to change FPS");
         // Width
-        //if (cam.Set(CapProp.FrameWidth, frame_width) == false) Console.WriteLine("Unable to change frame width");
+        if (cam.Set(CapProp.FrameWidth, frame_width) == false) Console.WriteLine("Unable to change frame width");
         // Frames per second
-        //if (cam.Set(CapProp.FrameHeight, frame_height) == false) Console.WriteLine("Unable to change frame height");
+        if (cam.Set(CapProp.FrameHeight, frame_height) == false) Console.WriteLine("Unable to change frame height");
 
         String bgr_wname = "(C#) Color image"; //The name of the window
         String gray_wname = "(C#) Grayscale image"; //The name of the window
@@ -42,27 +42,28 @@ public class MultiProcessShMemWithPython
         long bgr_img_size = org_bgr_image.Step * frame_height,
              gray_img_size = org_gray_image.Step * frame_height;
  
-        int key = -1;
-        int var = 0;
-        // I have not found an easy way to determine the amount of memory being
-        // used by an image, so I am simply using the double of the needed data.
+        // The shared memory will contain:
+        //  -> BGR image
+        //  -> Grayscale image
         using (MemoryMappedFile mmf = MemoryMappedFile.CreateNew("mySharedMem", bgr_img_size+gray_img_size))
-        using (MemoryMappedViewAccessor bgr_accessor_view = mmf.CreateViewAccessor()) // (0, bgr_img_size + gray_img_size))
-        //using (MemoryMappedViewAccessor gray_accessor_view = mmf.CreateViewAccessor(bgr_img_size, gray_img_size))
+        using (MemoryMappedViewAccessor accessor_view = mmf.CreateViewAccessor()) // Access entire shared memory
         {
+            // Shared memory access pointer
+            byte* acc_ptr = null;
+            accessor_view.SafeMemoryMappedViewHandle.AcquirePointer(ref acc_ptr);
+
             // BGR image access
-            byte* bgr_acc_ptr = null;
-            bgr_accessor_view.SafeMemoryMappedViewHandle.AcquirePointer(ref bgr_acc_ptr);
-            Mat bgr_image = new Mat(frame_height, frame_width, DepthType.Cv8U, 3, (IntPtr)bgr_acc_ptr, org_bgr_image.Step);
+            Mat bgr_image = new Mat(frame_height, frame_width, DepthType.Cv8U,
+                                    3, (IntPtr)acc_ptr,
+                                    org_bgr_image.Step);
 
             // Grayscale image access
-            //byte* gray_acc_ptr = null;
-            //gray_accessor_view.SafeMemoryMappedViewHandle.AcquirePointer(ref gray_acc_ptr);
-            Mat gray_image = new Mat(frame_height, frame_width, DepthType.Cv8U, 1, (IntPtr)(bgr_acc_ptr+bgr_img_size), org_gray_image.Step);
-
-            // var = (var+1)%10;
-            // accessor_view.Write(0, var);
-            while (true)  // Main, infinite, cycle
+            Mat gray_image = new Mat(frame_height, frame_width, DepthType.Cv8U,
+                                     1, (IntPtr)(acc_ptr + bgr_img_size), // Offset for the grayscale image
+                                     org_gray_image.Step);
+            
+            // Main, infinite, cycle
+            while (true)
             {
                 // Try to gain control of the named mutex. If the mutex is 
                 // controlled by another thread, wait for it to be released.        
@@ -73,7 +74,7 @@ public class MultiProcessShMemWithPython
                 m.ReleaseMutex();
                 CvInvoke.Imshow(bgr_wname, bgr_image);
                 CvInvoke.Imshow(gray_wname, gray_image);
-                key = CvInvoke.WaitKey(20);  //Wait for the key pressing event
+                int key = CvInvoke.WaitKey(20);  //Wait for the key pressing event
                 if (key == 'q')
                 {
                     //Console.WriteLine("Exiting...");
@@ -82,8 +83,7 @@ public class MultiProcessShMemWithPython
                 //Console.WriteLine("Mutex released.");
                 //Thread.Sleep(2000);
             }
-            bgr_accessor_view.SafeMemoryMappedViewHandle.ReleasePointer();
-            //gray_accessor_view.SafeMemoryMappedViewHandle.ReleasePointer();
+            accessor_view.SafeMemoryMappedViewHandle.ReleasePointer();
             mmf.Dispose();
         }
 
