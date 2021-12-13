@@ -121,32 +121,41 @@ if __name__ == '__main__':
     # Number processes accessing the camera images
     NUM_PROCESSES = 2
     NUM_FRAME_BUFFERS = NUM_PROCESSES + 2
-    frame_width = 640
     frame_height = 480
+    frame_width = 640
+    num_channels = 3
+    bgr_step_size =  frame_width*num_channels
+    gray_step_size = frame_width
     fps = 30
 
     # Access shared memory
-    mymap = mmap.mmap(fileno=-1, tagname='mySharedMem',
-                      length=frame_height*frame_width*3*2,
+    # BGR image
+    rgbmap = mmap.mmap(fileno=-1, tagname='mySharedMem',
+                      length=frame_height*bgr_step_size + frame_height*gray_step_size,
                       access=mmap.ACCESS_READ)
-    rgb_frame = np.ndarray((frame_height, frame_width, 3),
-                           dtype=np.uint8, buffer=mymap)
+    #rgb_frame = np.ndarray((frame_height, frame_width, num_channels),
+    #                       dtype=np.uint8, buffer=np.frombuffer(rgbmap[0:]))
+    rgb_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
+                              count=frame_height*bgr_step_size, offset=0)
+    rgb_frame.shape = (frame_height, frame_width, num_channels)
+    
+    # Grayscale image
+    #graymap = mmap.mmap(fileno=-1, tagname='mySharedMem',
+    #                  length=frame_height*gray_step_size,
+    #                  offset=frame_height*bgr_step_size,
+    #                  access=mmap.ACCESS_READ)
+    #gray_frame = np.ndarray((frame_height, frame_width),
+    #                       dtype=np.uint8,
+    #                       buffer=rgbmap[frame_height*bgr_step_size:])
+    gray_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
+                              count=frame_height*gray_step_size,
+                              offset=frame_height*bgr_step_size).reshape((frame_height, frame_width))
 
     # Get the shared mutex
     mutex = namedmutex.NamedMutex('MyMutex', existing=True, acquire=False)
 
     cv.namedWindow('Main process')
     print(f'Expected FPS: {fps}')
-
-    # Confirm we are able to acquire images (and initialize the grayscale frame
-    # variable)
-    mutex.acquire(10)
-    if mutex.acquired:
-        gray_frame = cv.cvtColor(rgb_frame, cv.COLOR_BGR2GRAY)
-        mutex.release()
-    else:
-        print('Unable to acquire mutex....')
-        exit(0)
 
     # Create the shared array for the camera image
     shared_buffer_shape = (
@@ -208,8 +217,12 @@ if __name__ == '__main__':
         # Access the image in the shared memory.
         mutex.acquire(4)
         if mutex.acquired:
-            cv.cvtColor(src=rgb_frame, code=cv.COLOR_BGR2GRAY,
-                        dst=gray_frame_buffer[next_cam_buffer_idx, :, :])
+            np.copyto(dst=gray_frame_buffer[next_cam_buffer_idx, :, :],
+                      src=gray_frame)
+            #cv.cvtColor(src=rgb_frame, code=cv.COLOR_BGR2GRAY,
+            #            dst=gray_frame_buffer[next_cam_buffer_idx, :, :])
+            cv.imshow('Main process (BGR)', rgb_frame)
+            cv.imshow('Main process (GRAY)', gray_frame)
             mutex.release()
         else:
             print('Unable to acquire mutex....')
