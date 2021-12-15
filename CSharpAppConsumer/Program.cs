@@ -12,7 +12,7 @@ namespace CSharpAppConsumer
             byte[] msg = new byte[MAX_NUM_BYTES];
 
             using (NamedPipeClientStream pipeClient =
-            new NamedPipeClientStream(".", "pipe1", PipeDirection.In))
+                   new NamedPipeClientStream(".", "pipe1", PipeDirection.In))
             {
                 // Connect to the pipe or wait until the pipe is available.
                 Console.Write("Attempting to connect to pipe...");

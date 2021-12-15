@@ -6,7 +6,6 @@ using System.Threading;
 using System.IO;
 using System.IO.Pipes;
 using System.IO.MemoryMappedFiles;
-using System.Net.Sockets;
 
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -37,15 +36,21 @@ public class MultiProcessShMemWithPython
         CvInvoke.NamedWindow(bgr_wname); //Create the window using the specific name
         CvInvoke.NamedWindow(gray_wname); //Create the window using the specific name
 #endif
-        string path = Path.Combine(Path.GetTempPath(), "arware-uds");//Path.GetRandomFileName());
-        var endPoint = new UnixDomainSocketEndPoint(path);
+
+        // Create named pipe to trigger new image availability (1 per consumer process)
+        NamedPipeServerStream pipeServer =
+            new NamedPipeServerStream("pipe1", PipeDirection.Out, 1, PipeTransmissionMode.Byte,
+                                      PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+        Console.WriteLine("NamedPipeServerStream object created.");
 
         // Wait for a client to connect
         Console.Write("Waiting for client connection...");
         pipeServer.WaitForConnection();
 
         Console.WriteLine("Client connected.");
-        pipeServer.WriteByte(1);
+        byte[] msg = new byte[1];
+        msg[0] = 1;
+        pipeServer.WriteAsync(msg, 0, 1);
         Console.WriteLine("Byte sent.");
 
 

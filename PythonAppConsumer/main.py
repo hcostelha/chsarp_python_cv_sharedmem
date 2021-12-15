@@ -7,6 +7,9 @@ import multiprocessing as mp
 import multiprocessing.connection as mpc
 import queue
 import time
+import socket
+import tempfile
+import os.path
 
 import numpy as np
 import cv2 as cv
@@ -120,14 +123,11 @@ def process2(cons_queue, shared_frame_arr, shared_buffer_shape,
 # Producer process
 if __name__ == '__main__':
 
-    f = open('\\\\.\\pipe\\pipe1', 'r+b', 0)
+    #f = open('\\\\.\\pipe\\pipe1', 'rb', 0)
+    f = open(r'\\.\pipe\pipe1', 'rb', 0)
     ola = f.readall()
-
-    f =  mpc.Client(r'\.\pipe{PipeName}', 'AF_PIPE', authkey=None)
-
-    f =  mpc.Client('\\\\.\\pipe\\pipe1', 'AF_PIPE', authkey=None)
-
-
+    ola = f.read(10)
+    
 
     # Number processes accessing the camera images
     NUM_PROCESSES = 2
