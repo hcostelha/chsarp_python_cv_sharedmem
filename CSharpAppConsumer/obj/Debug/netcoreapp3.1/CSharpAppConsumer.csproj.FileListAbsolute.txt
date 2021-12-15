@@ -1,0 +1,14 @@
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.csproj.AssemblyReference.cache
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.AssemblyInfoInputs.cache
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.AssemblyInfo.cs
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.csproj.CoreCompileInputs.cache
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.exe
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.deps.json
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.runtimeconfig.json
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.runtimeconfig.dev.json
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.dll
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\bin\Debug\netcoreapp3.1\CSharpAppConsumer.pdb
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.dll
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.pdb
+C:\Users\hugoc\Downloads\temp\chsarp_python_cv_sharedmem\CSharpAppConsumer\obj\Debug\netcoreapp3.1\CSharpAppConsumer.genruntimeconfig.cache

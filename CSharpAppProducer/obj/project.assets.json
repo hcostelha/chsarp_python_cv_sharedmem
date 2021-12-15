@@ -1451,11 +1451,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpApp\\MultiProcessShMemWithPython.csproj",
+      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\MultiProcessShMemWithPython.csproj",
       "projectName": "MultiProcessShMemWithPython",
-      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpApp\\MultiProcessShMemWithPython.csproj",
+      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\MultiProcessShMemWithPython.csproj",
       "packagesPath": "C:\\Users\\hugoc\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpApp\\obj\\",
+      "outputPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

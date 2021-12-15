@@ -1,18 +1,25 @@
-﻿using System;
+﻿#define DEBUG
+//#undef DEBUG
+
+using System;
 using System.Threading;
 using System.IO;
+using System.IO.Pipes;
 using System.IO.MemoryMappedFiles;
+using System.Net.Sockets;
 
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using System.Runtime.CompilerServices;
 
+
 public class MultiProcessShMemWithPython
 {
     public static unsafe void Main()
     {
-        int frame_width = 640, frame_height = 480, num_channels = 3, fps = 30;
+        byte NUM_PROCESSES = 2;
+        int frame_width = 640, frame_height = 480, fps = 30;
         // For EMGU docs, see https://www.emgu.com/wiki/files/4.5.4/document/html/R_Project_Emgu_CV_Documentation.htm
         VideoCapture cam = new VideoCapture(0, VideoCapture.API.Any);
         // set video properties
@@ -24,10 +31,23 @@ public class MultiProcessShMemWithPython
         // Frames per second
         if (cam.Set(CapProp.FrameHeight, frame_height) == false) Console.WriteLine("Unable to change frame height");
 
+#if DEBUG
         String bgr_wname = "(C#) Color image"; //The name of the window
         String gray_wname = "(C#) Grayscale image"; //The name of the window
         CvInvoke.NamedWindow(bgr_wname); //Create the window using the specific name
         CvInvoke.NamedWindow(gray_wname); //Create the window using the specific name
+#endif
+        string path = Path.Combine(Path.GetTempPath(), "arware-uds");//Path.GetRandomFileName());
+        var endPoint = new UnixDomainSocketEndPoint(path);
+
+        // Wait for a client to connect
+        Console.Write("Waiting for client connection...");
+        pipeServer.WaitForConnection();
+
+        Console.WriteLine("Client connected.");
+        pipeServer.WriteByte(1);
+        Console.WriteLine("Byte sent.");
+
 
         // Acquire first image
         Mat org_bgr_image = cam.QueryFrame();
@@ -72,22 +92,25 @@ public class MultiProcessShMemWithPython
                 if (cam.Read(bgr_image) == false) Console.WriteLine("Unable to acquire frame...");
                 CvInvoke.CvtColor(bgr_image, gray_image, ColorConversion.Bgr2Gray);
                 m.ReleaseMutex();
+#if DEBUG
                 CvInvoke.Imshow(bgr_wname, bgr_image);
                 CvInvoke.Imshow(gray_wname, gray_image);
                 int key = CvInvoke.WaitKey(20);  //Wait for the key pressing event
                 if (key == 'q')
                 {
-                    //Console.WriteLine("Exiting...");
+                    Console.WriteLine("Exiting...");
                     break;
                 }
-                //Console.WriteLine("Mutex released.");
-                //Thread.Sleep(2000);
+#endif
             }
             accessor_view.SafeMemoryMappedViewHandle.ReleasePointer();
             mmf.Dispose();
         }
 
-        CvInvoke.DestroyWindow(bgr_wname); //Destroy the window if key is pressed
+#if DEBUG
+        CvInvoke.DestroyWindow(bgr_wname);
+        CvInvoke.DestroyWindow(gray_wname);
+#endif
         m.Dispose();
     }
 }

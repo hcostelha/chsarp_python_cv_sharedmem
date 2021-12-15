@@ -4,6 +4,7 @@ from ctypes import wintypes
 import time
 import mmap
 import multiprocessing as mp
+import multiprocessing.connection as mpc
 import queue
 import time
 
@@ -118,6 +119,16 @@ def process2(cons_queue, shared_frame_arr, shared_buffer_shape,
 
 # Producer process
 if __name__ == '__main__':
+
+    f = open('\\\\.\\pipe\\pipe1', 'r+b', 0)
+    ola = f.readall()
+
+    f =  mpc.Client(r'\.\pipe{PipeName}', 'AF_PIPE', authkey=None)
+
+    f =  mpc.Client('\\\\.\\pipe\\pipe1', 'AF_PIPE', authkey=None)
+
+
+
     # Number processes accessing the camera images
     NUM_PROCESSES = 2
     NUM_FRAME_BUFFERS = NUM_PROCESSES + 2
