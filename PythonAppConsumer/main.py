@@ -1,6 +1,6 @@
 import namedmutex
 import ctypes
-from ctypes import wintypes
+from ctypes import sizeof, wintypes
 import time
 import mmap
 import multiprocessing as mp
@@ -16,46 +16,59 @@ import cv2 as cv
 
 
 # Function to run consumer process 1
-def process1(cons_queue, shared_frame_arr, shared_buffer_shape,
-             shared_latest_cam_buffer_idx, shared_buffers_idx_in_use):
-    '''
-        cons_queue: This consumer queue. Willbe used to get a trigger for a new
-            availabe frame;
-        shared_frame_arr: actual buffer array that holds the captured frames;
+def process1(proc_num, shared_buffer_shape, shared_latest_cam_buffer_idx,
+             shared_buffers_idx_in_use, shared_gray_frames):
+    '''shared_gray_frames
+        proc_num: Process number (for the socket connection);
         shared_buffer_shape: size of the buffer (N x Height x Width)
         shared_latest_cam_buffer_idx: index of the last captured frame (in the
-            shared_frame_arr)
+            shared_gray_frames)
         shared_buffers_idx_in_use: array with the number of processes using
             each stored frame.
+        shared_gray_frames: actual buffer array that holds the captured frames;
     '''
     cv.namedWindow('Process 1')
-    frame_buffer = \
-        np.frombuffer(shared_frame_arr.get_obj(), dtype='B'
-                      ).reshape(shared_buffer_shape)
-    result_img = np.empty((frame_buffer.shape[1], frame_buffer.shape[2]),
-                          dtype=frame_buffer.dtype)
+    MAX_NUM_BYTES = 200
+    # Connect to producer socket for this consumer
+    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', 0)
+
+    # Get the shared mutex
+    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
+
+    # Variable to hold the image processing result
+    result_img = np.empty((shared_buffer_shape[0], shared_buffer_shape[1]),
+                          dtype=np.uint8)
     start = time.time()
     num_frames = 0
     frame_idx = -1
     while True:
         # Wait for a signal that a new frame is available
-        cons_queue.get(True, None)
+        msg = f.read(MAX_NUM_BYTES)
+        if msg.__len__() == 0:
+            print("No bytes read!")
+        elif msg.__len__() == MAX_NUM_BYTES:
+            print("Not all bytes might have beed read!")
 
         # Check the index of the latest frame and signal its use
-        with shared_latest_cam_buffer_idx:
+        mutex.acquire(4)
+        if mutex.acquired:
             # Decrease the last frame index usage (except the first time)
             if frame_idx != -1:
                 shared_buffers_idx_in_use[frame_idx] -= 1
             # Store the latest frame index
-            frame_idx = shared_latest_cam_buffer_idx.value
+            frame_idx = shared_latest_cam_buffer_idx[0]
             # Increase the number of processes currently using this frame index
             shared_buffers_idx_in_use[frame_idx] += 1
+        else:
+            print('Unable to acquire mutex....')
+            continue
+        mutex.release()
 
         # Process frame
         # We do not need to use the shared_frame_arr lock, since the frame will
         # not be updated while we are using it.
         # This is just an example, you can do antyhing you want here
-        cv.Canny(frame_buffer[frame_idx, :, :], 100, 50, edges=result_img)
+        cv.Canny(shared_gray_frames[frame_idx], 100, 50, edges=result_img)
 
         # Debug code: show the result and update the FPS indo
         cv.imshow('Process 1', result_img)
@@ -69,45 +82,58 @@ def process1(cons_queue, shared_frame_arr, shared_buffer_shape,
 
 
 # Function to run consumer process 2
-def process2(cons_queue, shared_frame_arr, shared_buffer_shape,
-             shared_latest_cam_buffer_idx, shared_buffers_idx_in_use):
-    '''
-        cons_queue: This consumer queue. Willbe used to get a trigger for a new
-            availabe frame;
-        shared_frame_arr: actual buffer array that holds the captured frames;
+def process2(proc_num, shared_buffer_shape, shared_latest_cam_buffer_idx,
+             shared_buffers_idx_in_use, shared_gray_frames):
+    '''shared_gray_frames
+        proc_num: Process number (for the socket connection);
         shared_buffer_shape: size of the buffer (N x Height x Width)
         shared_latest_cam_buffer_idx: index of the last captured frame (in the
-            shared_frame_arr)
+            shared_gray_frames)
         shared_buffers_idx_in_use: array with the number of processes using
             each stored frame.
+        shared_gray_frames: actual buffer array that holds the captured frames;
     '''
     cv.namedWindow('Process 2')
-    frame_buffer = \
-        np.frombuffer(shared_frame_arr.get_obj(), dtype='B'
-                      ).reshape(shared_buffer_shape)
-    result_img = np.empty((frame_buffer.shape[1], frame_buffer.shape[2]),
-                          dtype=frame_buffer.dtype)
+    MAX_NUM_BYTES = 200
+    # Connect to producer socket for this consumer
+    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', 0)
+
+    # Get the shared mutex
+    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
+
+    # Variable to hold the image processing result
+    result_img = np.empty((shared_buffer_shape[0], shared_buffer_shape[1]),
+                          dtype=np.uint8)
     start = time.time()
     num_frames = 0
     frame_idx = -1
     while True:
         # Wait for a signal that a new frame is available
-        cons_queue.get(True, None)
+        msg = f.read(MAX_NUM_BYTES)
+        if msg.__len__() == 0:
+            print("No bytes read!")
+        elif msg.__len__() == MAX_NUM_BYTES:
+            print("Not all bytes might have beed read!")
 
         # Check the index of the latest frame and signal its use
-        with shared_latest_cam_buffer_idx:
+        mutex.acquire(4)
+        if mutex.acquired:
             # Decrease the last frame index usage (except the first time)
             if frame_idx != -1:
                 shared_buffers_idx_in_use[frame_idx] -= 1
             # Store the latest frame index
-            frame_idx = shared_latest_cam_buffer_idx.value
+            frame_idx = shared_latest_cam_buffer_idx[0]
             # Increase the number of processes currently using this frame index
             shared_buffers_idx_in_use[frame_idx] += 1
+        else:
+            print('Unable to acquire mutex....')
+            continue
+        mutex.release()
 
         # Process frame
         # We do not need to yse the shared_frame_arr lock, since the frame will
         # not be updated while we are using it.
-        np.subtract(255, frame_buffer[frame_idx, :, :], out=result_img)
+        np.subtract(255, shared_gray_frames[frame_idx], out=result_img)
 
         # Debug code: show the result and update the FPS indo
         cv.imshow('Process 2', result_img)
@@ -122,134 +148,122 @@ def process2(cons_queue, shared_frame_arr, shared_buffer_shape,
 
 # Producer process
 if __name__ == '__main__':
+    # Number of python processes accessing the camera images
+    NUM_PYTHON_PROCESSES = 2  # The code below needs to be changed if this changes
 
-    #f = open('\\\\.\\pipe\\pipe1', 'rb', 0)
-    f = open(r'\\.\pipe\pipe1', 'rb', 0)
-    ola = f.readall()
-    ola = f.read(10)
+    # Get access to the shared memory. We will do this in two runs, the first
+    # to get the base sizes, and then the real deal.
+    # Check the C# Producer code for more information on this
+    shared_mem = mmap.mmap(fileno=-1, tagname='SharedMemory',
+                           length=5*4, access=mmap.ACCESS_WRITE)
+
+    offset = 0
+
+    # shared_frame_height
+    shared_frame_height = \
+        np.frombuffer(buffer=shared_mem, dtype=np.int, count=1, offset=offset)
+    frame_height = shared_frame_height[0]
+    offset += 4
     
+    # shared_frame_width
+    shared_frame_width = \
+        np.frombuffer(buffer=shared_mem, dtype=np.int, count=1, offset=offset)
+    frame_width = shared_frame_width[0]
+    offset += 4
 
-    # Number processes accessing the camera images
-    NUM_PROCESSES = 2
-    NUM_FRAME_BUFFERS = NUM_PROCESSES + 2
-    frame_height = 480
-    frame_width = 640
-    num_channels = 3
-    bgr_step_size =  frame_width*num_channels
+    # shared_bgr_frame_step
+    shared_bgr_frame_step = \
+        np.frombuffer(buffer=shared_mem, dtype=np.int, count=1, offset=offset)
+    bgr_frame_step = shared_bgr_frame_step[0]
+    offset += 4
+
+    # shared_gray_frame_step
+    shared_gray_frame_step = \
+        np.frombuffer(buffer=shared_mem, dtype=np.int, count=1, offset=offset)
+    gray_frame_step = shared_gray_frame_step[0]
+    offset += 4
+
+    # Compute image sizes from the above data
+    bgr_step_size =  frame_width*3
+    bgr_frame_size = frame_height*bgr_step_size
     gray_step_size = frame_width
-    fps = 30
+    gray_frame_size = frame_height*gray_step_size
 
-    # Access shared memory
-    # BGR image
-    rgbmap = mmap.mmap(fileno=-1, tagname='mySharedMem',
-                      length=frame_height*bgr_step_size + frame_height*gray_step_size,
-                      access=mmap.ACCESS_READ)
-    rgb_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
-                              count=frame_height*bgr_step_size, offset=0
-                             ).reshape(frame_height, frame_width, num_channels)
+    # shared_num_frame_buffers
+    shared_num_frame_buffers = \
+        np.frombuffer(buffer=shared_mem, dtype=np.uint8, count=1, offset=offset)
+    num_frame_buffers = shared_num_frame_buffers[0]
+    offset += 4
+
+    # Reopen shared memory with the correct size
+    shared_mem.close()
+    shared_mem = mmap.mmap(
+        fileno=-1, tagname='SharedMemory',
+        length=5*4 + 1 + num_frame_buffers + bgr_frame_size + 
+               num_frame_buffers*gray_frame_size,
+        access=mmap.ACCESS_WRITE)
+
+    # shared_latest_cam_buffer_idx
+    shared_latest_cam_buffer_idx = \
+        np.frombuffer(buffer=shared_mem, dtype=np.uint8, count=1, offset=offset)
+    offset += 1
+
+    # Local (non-shared) copy of the shared_latest_cam_buffer_idx
+    latest_cam_buffer_idx = num_frame_buffers
+
+    # shared_buffers_idx_in_use[NUM_FRAME_BUFFERS]
+    shared_buffers_idx_in_use = np.frombuffer(
+        buffer=shared_mem, dtype=np.uint8,
+        count=num_frame_buffers, offset=offset
+       )
+    offset += num_frame_buffers
+
+    # BGR image (not used here)
+    shared_rgb_frame = np.frombuffer(
+        buffer=shared_mem, dtype=np.uint8,
+        count=bgr_frame_size, offset=offset
+       ).reshape(frame_height, frame_width, 3)
+    offset += bgr_frame_size
     
-    # Grayscale image
-    gray_frame = np.frombuffer(buffer=rgbmap, dtype=np.uint8,
-                               count=frame_height*gray_step_size,
-                               offset=frame_height*bgr_step_size
-                              ).reshape((frame_height, frame_width))
-
-    # Get the shared mutex
-    mutex = namedmutex.NamedMutex('MyMutex', existing=True, acquire=False)
+    # Grayscale images
+    shared_gray_frames = list()
+    for i in range(num_frame_buffers):
+        shared_gray_frames.append(np.frombuffer(
+            buffer=shared_mem, dtype=np.uint8,
+            count=gray_frame_size,
+            offset=offset,
+           ).reshape(frame_height, frame_width))
+        offset += gray_frame_size
 
     cv.namedWindow('Main process')
-    print(f'Expected FPS: {fps}')
-
-    # Create the shared array for the camera image
-    shared_buffer_shape = (
-        NUM_PROCESSES+2, gray_frame.shape[0], gray_frame.shape[1])
-    # The first argument, 'B', specifies 'unsigned char' (8 bits). See
-    # https://docs.python.org/3/library/array.html#module-array
-    shared_frame_arr = mp.Array('B', int(np.prod(shared_buffer_shape)),
-                                lock=mp.Lock())
-    # Create a numpy array without allocating new memory, it will use the
-    # shared array memory, so as to be shareable between different processes.
-    gray_frame_buffer = np.frombuffer(shared_frame_arr.get_obj(), dtype='B'
-                                      ).reshape(shared_buffer_shape)
-
-    # Create the shared variable for the latest camera frame index
-    shared_latest_cam_buffer_idx = mp.Value('b', -1)
-
-    # Create the shared array to hold the number of processes using each frame
-    shared_buffers_idx_in_use = mp.Array('B', NUM_FRAME_BUFFERS)
-    shared_buffers_idx_in_use_array = np.frombuffer(
-        shared_buffers_idx_in_use.get_obj(), dtype='B')
-
-    # Create a queue for each process. No need to have more than 2 elements.
-    cons_queues = [mp.Queue(2) for i in range(NUM_PROCESSES)]
 
     # Create two processes
     proc1 = mp.Process(target=process1, name='Process1',
-                       args=(cons_queues[0],
-                             shared_frame_arr,
-                             shared_buffer_shape,
+                       args=(1,
+                             (frame_height, frame_width),
                              shared_latest_cam_buffer_idx,
-                             shared_buffers_idx_in_use))
+                             shared_buffers_idx_in_use,
+                             shared_gray_frames))
     proc2 = mp.Process(target=process2, name='Process2',
-                       args=(cons_queues[1],
-                             shared_frame_arr,
-                             shared_buffer_shape,
+                       args=(2,
+                             (frame_height, frame_width),
                              shared_latest_cam_buffer_idx,
-                             shared_buffers_idx_in_use))
+                             shared_buffers_idx_in_use,
+                             shared_gray_frames))
 
     # Start the two processes
     proc1.start()
     proc2.start()
 
-    # Acquire and process each frame until the ESC key is pressed.
-    start = time.time()
-    num_frames = 0
+    # Get the shared mutex
+    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
+
+    # Wait until nboth processes are finished
     while True:
-        # Find free (unused) frame buffer
-        next_cam_buffer_idx = -1
-        with shared_latest_cam_buffer_idx:
-            for i in range(NUM_FRAME_BUFFERS):
-                if (shared_buffers_idx_in_use_array[i] == 0) and \
-                   (i != shared_latest_cam_buffer_idx.value):
-                    next_cam_buffer_idx = i
-                    break
-        # Safety check
-        if next_cam_buffer_idx == -1:
-            raise RuntimeError('No available buffer index!')
-
-        # Access the image in the shared memory.
-        mutex.acquire(4)
-        if mutex.acquired:
-            np.copyto(dst=gray_frame_buffer[next_cam_buffer_idx, :, :],
-                      src=gray_frame)
-            #cv.cvtColor(src=rgb_frame, code=cv.COLOR_BGR2GRAY,
-            #            dst=gray_frame_buffer[next_cam_buffer_idx, :, :])
-            cv.imshow('Main process (BGR)', rgb_frame)
-            cv.imshow('Main process (GRAY)', gray_frame)
-            mutex.release()
-        else:
-            print('Unable to acquire mutex....')
-            continue
-            
-        # Updated the latest frame buffer index
-        with shared_latest_cam_buffer_idx:
-            shared_latest_cam_buffer_idx.value = next_cam_buffer_idx
-
-        # Signal consumers that a new image is available
-        for i in range(NUM_PROCESSES):
-            try:
-                cons_queues[i].put(True, block=False)
-            except queue.Full:
-                pass
-
-        # Debug code: show the last frame and update the FPS info
-        cv.imshow('Main process',
-                  gray_frame_buffer[shared_latest_cam_buffer_idx.value, :, :])
-        if cv.waitKey(5) == 27:
+        mutex.acquire()
+        cv.imshow('Main process', shared_rgb_frame)
+        mutex.release()
+        cv.waitKey(5)
+        if (proc1.is_alive is False) and (proc2.is_alive is False):
             break
-        num_frames += 1
-        if num_frames == 100:
-            end = time.time()
-            print(f'Process 0: {num_frames/(end-start):.2f} FPS')
-            num_frames = 0
-            start = end
+        #time.sleep(1.0)

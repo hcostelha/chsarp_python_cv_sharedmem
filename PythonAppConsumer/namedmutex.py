@@ -22,7 +22,7 @@ _CreateMutex.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.LPSTR]
 _CreateMutex.restype = wintypes.HANDLE
 
 _OpenMutex = ctypes.windll.kernel32.OpenMutexW
-_OpenMutex.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPWSTR]
+_OpenMutex.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
 _OpenMutex.restype = wintypes.HANDLE
 
 _WaitForSingleObject = ctypes.windll.kernel32.WaitForSingleObject
@@ -51,7 +51,7 @@ class NamedMutex(object):
         # If existing is True, open an exising mutex, othwerise create a new
         # one (in this case, if one already exists, it will use that one)
         if existing:
-            ret = _OpenMutex(SYNCHRONIZE, True, "MyMutex")
+            ret = _OpenMutex(SYNCHRONIZE, True, name)
         else:
             ret = _CreateMutex(None, False, name.encode())
         if not ret:
