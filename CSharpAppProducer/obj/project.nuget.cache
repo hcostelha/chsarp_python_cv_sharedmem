@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "OJMlVcxEocCJVr6WUXYD1r23hxhpJY8uI+hXbYanINi/Q2jjXVGp7MEjz1F5ztopMWDHQjswL6vwmzXduJlsRQ==",
+  "dgSpecHash": "6NCZsEPUEa0FuZQ8DueXlZn22K5cR9XeKghNxbDVhp6+HqQUNb2wB3PK+p9QKH1rKk05p9PrSBO+HRr/Tb1ccw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\MultiProcessShMemWithPython.csproj",
+  "projectFilePath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\EMGUProducer.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hugoc\\.nuget\\packages\\emgu.cv\\4.5.4.4788\\emgu.cv.4.5.4.4788.nupkg.sha512",
     "C:\\Users\\hugoc\\.nuget\\packages\\emgu.cv.runtime.windows\\4.5.4.4788\\emgu.cv.runtime.windows.4.5.4.4788.nupkg.sha512",

@@ -1451,9 +1451,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\MultiProcessShMemWithPython.csproj",
-      "projectName": "MultiProcessShMemWithPython",
-      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\MultiProcessShMemWithPython.csproj",
+      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\EMGUProducer.csproj",
+      "projectName": "EMGUProducer",
+      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\EMGUProducer.csproj",
       "packagesPath": "C:\\Users\\hugoc\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppProducer\\obj\\",
       "projectStyle": "PackageReference",

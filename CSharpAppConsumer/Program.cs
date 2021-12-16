@@ -1,8 +1,11 @@
-﻿#define DEBUG
-//#undef DEBUG
+﻿// Define this if you whish to see the captured and shared image windows
+#define DEBUG_WINDOWS
+//#undef DEBUG_WINDOWS
 
-//using System;
-using System.IO;
+// Define this if you wish to see the FPS being shared
+#define DEBUG_FPS
+//#undef DEBUG_FPS
+
 using System.IO.Pipes;
 using System.IO.MemoryMappedFiles;
 
@@ -95,7 +98,7 @@ namespace CSharpAppConsumer
                 Console.Write("Attempting to connect to our pipe...");
                 pipeClient.Connect();
                 Console.WriteLine("Connected to pipe.");
-#if DEBUG
+#if DEBUG_WINDOWS
                 String bgr_wname = "(C#) Color image"; //The name of the window
                 String gray_wname = "(C#) Grayscale image"; //The name of the window
                 CvInvoke.NamedWindow(bgr_wname);
@@ -124,21 +127,24 @@ namespace CSharpAppConsumer
                         // Update number of users of the buffer
                         shared_buffers_idx_in_use[frame_idx]++;
                         mtx.ReleaseMutex();
-
+#if DEBUG_WINDOWS
                         // Show images for debugging purposes
                         CvInvoke.Imshow(bgr_wname, bgr_image);
                         CvInvoke.Imshow(gray_wname, gray_images[frame_idx]);
                         if (CvInvoke.WaitKey(5) == 'q')
                             break;
+#endif
+#if DEBUG_FPS
                         // Compute the FPS
                         num_frames += 1;
                         if (num_frames == 100)
                         {
                             var endTime = Environment.TickCount;
-                            Console.WriteLine($"Process 0: {num_frames / (endTime - startTime)} FPS");
+                            Console.WriteLine($"Process 0: {num_frames * 1000.0 / (endTime - startTime):0.00} FPS");
                             num_frames = 0;
                             startTime = endTime;
                         }
+#endif
                     }
                 }
             }

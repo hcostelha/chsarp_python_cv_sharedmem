@@ -1,17 +1,18 @@
-﻿#define DEBUG
-//#undef DEBUG
+﻿// Define this if you whish to see the captured and shared image windows
+#define DEBUG_WINDOWS
+//#undef DEBUG_WINDOWS
+
+// Define this if you wish to see the FPS being shared
+#define DEBUG_FPS
+//#undef DEBUG_FPS
 
 using System;
 using System.Threading;
-using System.IO;
 using System.IO.Pipes;
 using System.IO.MemoryMappedFiles;
 
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 public class MultiProcessShMemWithPython
@@ -34,7 +35,7 @@ public class MultiProcessShMemWithPython
         Mutex mtx = new Mutex(false, "ARMutex");
 
         // For EMGU docs, see https://www.emgu.com/wiki/files/4.5.4/document/html/R_Project_Emgu_CV_Documentation.htm
-        VideoCapture cam = new VideoCapture(0, VideoCapture.API.Any);
+        VideoCapture cam = new VideoCapture(0, VideoCapture.API.Msmf);
         // set video properties
         // More properties at: https://www.emgu.com/wiki/files/4.5.4/document/html/T_Emgu_CV_CvEnum_CapProp.htm
         // Frames per second
@@ -44,7 +45,7 @@ public class MultiProcessShMemWithPython
         // Frames per second
         if (cam.Set(CapProp.FrameHeight, frame_height) == false) Console.WriteLine("Unable to change frame height");
 
-#if DEBUG
+#if DEBUG_WINDOWS
         String bgr_wname = "(C#) Color image"; //The name of the window
         String gray_wname = "(C#) Grayscale image"; //The name of the window
         CvInvoke.NamedWindow(bgr_wname); //Create the window using the specific name
@@ -216,7 +217,7 @@ public class MultiProcessShMemWithPython
                     if (pipeConnected[i])
                         pipeServers[i].WriteAsync(msg, 0, 1);
                 }
-#if DEBUG
+#if DEBUG_WINDOWS
                 CvInvoke.Imshow(bgr_wname, bgr_image);
                 for (i = 0; i < NUM_FRAME_BUFFERS; i++)
                     CvInvoke.Imshow(gray_wname + $" {i}", gray_images[i]);
@@ -226,6 +227,8 @@ public class MultiProcessShMemWithPython
                     Console.WriteLine("Exiting...");
                     break;
                 }
+#endif
+#if DEBUG_FPS
                 // Compute the FPS
                 num_frames += 1;
                 if (num_frames == 100)
@@ -241,7 +244,7 @@ public class MultiProcessShMemWithPython
             mmf.Dispose();
         }
 
-#if DEBUG
+#if DEBUG_WINDOWS
         CvInvoke.DestroyWindow(bgr_wname);
         for (i = 0; i < NUM_FRAME_BUFFERS; i++)
             CvInvoke.DestroyWindow(gray_wname + $" {i}");

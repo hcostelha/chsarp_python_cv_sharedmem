@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "ncdAXldd38ukFguY72FL8IvIqrzBImFk30r/9+uy0pcGPkgHS6sS018kgylO+lAQNYyr3rQFExJ2MlHw+Nwg7g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\OpenCVSharpProducer\\OpenCVSharpProducer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\hugoc\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\microsoft.win32.systemevents\\5.0.0\\microsoft.win32.systemevents.5.0.0.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\opencvsharp4\\4.5.3.20211207\\opencvsharp4.4.5.3.20211207.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\opencvsharp4.runtime.win\\4.5.3.20211207\\opencvsharp4.runtime.win.4.5.3.20211207.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\system.drawing.common\\5.0.2\\system.drawing.common.5.0.2.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
+    "C:\\Users\\hugoc\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

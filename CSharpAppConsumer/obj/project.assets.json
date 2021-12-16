@@ -1451,9 +1451,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumer.csproj",
-      "projectName": "CSharpAppConsumer",
-      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumer.csproj",
+      "projectUniqueName": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumerEMGU.csproj",
+      "projectName": "CSharpAppConsumerEMGU",
+      "projectPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumerEMGU.csproj",
       "packagesPath": "C:\\Users\\hugoc\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\obj\\",
       "projectStyle": "PackageReference",

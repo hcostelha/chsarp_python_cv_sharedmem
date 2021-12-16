@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "2cibrt9/GMA3Q0p87W3sY7WRi7bAgmHolpvMnwwpgWaiMzlZCqLCa+E5Nq/HvD+dSR5oFnVrl96HCiKwL8FdRQ==",
+  "dgSpecHash": "46FVrHLg5dpbCdHHkOHQ21A85CKWaA/JtvbAo+CvIwy2Eqnr8f8JUy9ykVxfSuakJ4B+wUnrO0LWzkgAdMvvyQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumer.csproj",
+  "projectFilePath": "C:\\Users\\hugoc\\Downloads\\temp\\chsarp_python_cv_sharedmem\\CSharpAppConsumer\\CSharpAppConsumerEMGU.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hugoc\\.nuget\\packages\\emgu.cv\\4.5.4.4788\\emgu.cv.4.5.4.4788.nupkg.sha512",
     "C:\\Users\\hugoc\\.nuget\\packages\\emgu.cv.runtime.windows\\4.5.4.4788\\emgu.cv.runtime.windows.4.5.4.4788.nupkg.sha512",
