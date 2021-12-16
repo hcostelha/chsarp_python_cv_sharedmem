@@ -82,74 +82,12 @@ def process1(proc_num, shared_buffer_shape, shared_latest_cam_buffer_idx,
 
 
 # Function to run consumer process 2
-def process2(proc_num, shared_buffer_shape, shared_latest_cam_buffer_idx,
-             shared_buffers_idx_in_use, shared_gray_frames):
-    '''shared_gray_frames
-        proc_num: Process number (for the socket connection);
-        shared_buffer_shape: size of the buffer (N x Height x Width)
-        shared_latest_cam_buffer_idx: index of the last captured frame (in the
-            shared_gray_frames)
-        shared_buffers_idx_in_use: array with the number of processes using
-            each stored frame.
-        shared_gray_frames: actual buffer array that holds the captured frames;
+def img_process(proc_num):
     '''
-    cv.namedWindow('Process 2')
+        proc_num: Process number (for the socket connection);
+    '''
+    cv.namedWindow(f'Process {proc_num}')
     MAX_NUM_BYTES = 200
-    # Connect to producer socket for this consumer
-    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', 0)
-
-    # Get the shared mutex
-    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
-
-    # Variable to hold the image processing result
-    result_img = np.empty((shared_buffer_shape[0], shared_buffer_shape[1]),
-                          dtype=np.uint8)
-    start = time.time()
-    num_frames = 0
-    frame_idx = -1
-    while True:
-        # Wait for a signal that a new frame is available
-        msg = f.read(MAX_NUM_BYTES)
-        if msg.__len__() == 0:
-            print("No bytes read!")
-        elif msg.__len__() == MAX_NUM_BYTES:
-            print("Not all bytes might have beed read!")
-
-        # Check the index of the latest frame and signal its use
-        mutex.acquire(4)
-        if mutex.acquired:
-            # Decrease the last frame index usage (except the first time)
-            if frame_idx != -1:
-                shared_buffers_idx_in_use[frame_idx] -= 1
-            # Store the latest frame index
-            frame_idx = shared_latest_cam_buffer_idx[0]
-            # Increase the number of processes currently using this frame index
-            shared_buffers_idx_in_use[frame_idx] += 1
-        else:
-            print('Unable to acquire mutex....')
-            continue
-        mutex.release()
-
-        # Process frame
-        # We do not need to yse the shared_frame_arr lock, since the frame will
-        # not be updated while we are using it.
-        np.subtract(255, shared_gray_frames[frame_idx], out=result_img)
-
-        # Debug code: show the result and update the FPS indo
-        cv.imshow('Process 2', result_img)
-        cv.waitKey(5)
-        num_frames += 1
-        if num_frames == 100:
-            end = time.time()
-            print(f'Process 2: {num_frames/(end-start):.2f} FPS')
-            num_frames = 0
-            start = end
-
-
-# Producer process
-if __name__ == '__main__':
-    # Number of python processes accessing the camera images
-    NUM_PYTHON_PROCESSES = 2  # The code below needs to be changed if this changes
 
     # Get access to the shared memory. We will do this in two runs, the first
     # to get the base sizes, and then the real deal.
@@ -235,35 +173,75 @@ if __name__ == '__main__':
            ).reshape(frame_height, frame_width))
         offset += gray_frame_size
 
-    cv.namedWindow('Main process')
+    # Connect to producer socket for this consumer
+    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', 0)
 
+    # Get the shared mutex
+    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
+
+    # Variable to hold the image processing result
+    result_img = np.empty((frame_height, frame_width),
+                          dtype=np.uint8)
+    start = time.time()
+    num_frames = 0
+    frame_idx = -1
+    while True:
+        # Wait for a signal that a new frame is available
+        msg = f.read(MAX_NUM_BYTES)
+        if msg.__len__() == 0:
+            print("No bytes read!")
+        elif msg.__len__() == MAX_NUM_BYTES:
+            print("Not all bytes might have beed read!")
+
+        # Check the index of the latest frame and signal its use
+        mutex.acquire(4)
+        if mutex.acquired:
+            # Decrease the last frame index usage (except the first time)
+            if frame_idx != -1:
+                shared_buffers_idx_in_use[frame_idx] -= 1
+            # Store the latest frame index
+            frame_idx = shared_latest_cam_buffer_idx[0]
+            # Increase the number of processes currently using this frame index
+            shared_buffers_idx_in_use[frame_idx] += 1
+        else:
+            print('Unable to acquire mutex....')
+            continue
+        mutex.release()
+
+        # Process frame
+        # We do not need to yse the shared_frame_arr lock, since the frame will
+        # not be updated while we are using it.
+        if proc_num == 1:
+            cv.Canny(shared_gray_frames[frame_idx], 100, 50, edges=result_img)
+            time.sleep(0.5) # To evaluate different processing times
+        else:
+            np.subtract(255, shared_gray_frames[frame_idx], out=result_img)
+
+        # Debug code: show the result and update the FPS indo
+        cv.imshow(f'Process {proc_num}', result_img)
+        cv.waitKey(5)
+        num_frames += 1
+        if num_frames == 100:
+            end = time.time()
+            print(f'Process {proc_num}: {num_frames/(end-start):.2f} FPS')
+            num_frames = 0
+            start = end
+
+
+# Producer process
+if __name__ == '__main__':
     # Create two processes
-    proc1 = mp.Process(target=process1, name='Process1',
-                       args=(1,
-                             (frame_height, frame_width),
-                             shared_latest_cam_buffer_idx,
-                             shared_buffers_idx_in_use,
-                             shared_gray_frames))
-    proc2 = mp.Process(target=process2, name='Process2',
-                       args=(2,
-                             (frame_height, frame_width),
-                             shared_latest_cam_buffer_idx,
-                             shared_buffers_idx_in_use,
-                             shared_gray_frames))
+    proc1 = mp.Process(target=img_process, name='Process1',
+                       args=(1,))
+    proc2 = mp.Process(target=img_process, name='Process2',
+                       args=(2,))
 
     # Start the two processes
     proc1.start()
     proc2.start()
 
-    # Get the shared mutex
-    mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
-
     # Wait until nboth processes are finished
     while True:
-        mutex.acquire()
-        cv.imshow('Main process', shared_rgb_frame)
-        mutex.release()
-        cv.waitKey(5)
         if (proc1.is_alive is False) and (proc2.is_alive is False):
             break
         #time.sleep(1.0)

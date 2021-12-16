@@ -231,7 +231,7 @@ public class MultiProcessShMemWithPython
                 if (num_frames == 100)
                 {
                     var endTime = Environment.TickCount;
-                    Console.WriteLine($"Producer: {1000 * (num_frames / (1.0 * endTime - startTime))} FPS");
+                    Console.WriteLine($"Producer: {1000 * (num_frames / (1.0 * endTime - startTime)):0.00} FPS");
                     num_frames = 0;
                     startTime = endTime;
                 }
