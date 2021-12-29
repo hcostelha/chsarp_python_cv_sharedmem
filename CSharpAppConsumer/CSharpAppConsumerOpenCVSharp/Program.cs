@@ -1,6 +1,6 @@
 ﻿// Define this if you whish to see the captured and shared image windows
-#define DEBUG_WINDOWS
-//#undef DEBUG_WINDOWS
+//#define DEBUG_WINDOWS
+#undef DEBUG_WINDOWS
 
 // Define this if you wish to see the FPS being shared
 #define DEBUG_FPS
@@ -12,6 +12,7 @@ using System.IO.MemoryMappedFiles;
 using OpenCvSharp;
 using System;
 using System.Threading;
+
 
 namespace CSharpAppConsumer
 {
@@ -154,13 +155,14 @@ namespace CSharpAppConsumer
                         mtx.ReleaseMutex();
 
                         // Process images
-                        OpenCvSharp.Aruco.CvAruco.DetectMarkers(
-                            gray_images[frame_idx],
-                            aruco_dict,
-                            out var corners,
-                            out var ids,
-                            aruco_parameters,
-                            out var rejectedImgPoints);
+                        for (i = 0; i < 10; i++)
+                            OpenCvSharp.Aruco.CvAruco.DetectMarkers(
+                                gray_images[frame_idx],
+                                aruco_dict,
+                                out var corners,
+                                out var ids,
+                                aruco_parameters,
+                                out var rejectedImgPoints);
 #if DEBUG_WINDOWS
                         // Show images for debugging purposes
                         bgr_window.ShowImage(bgr_image);
@@ -171,7 +173,7 @@ namespace CSharpAppConsumer
 #if DEBUG_FPS
                         // Compute the FPS
                         num_frames += 1;
-                        if (num_frames == 1000)
+                        if (num_frames == 100)
                         {
                             var endTime = Environment.TickCount;
                             Console.WriteLine($"Process {proc_num}: {num_frames * 1000.0 / (endTime - startTime):0.00} FPS");
@@ -191,15 +193,15 @@ namespace CSharpAppConsumer
             // We are using static methods here, but we could use methods from
             // a specific instance.
             Thread proc0 = new Thread(Program.ImgProcess);
-            Thread proc1 = new Thread(Program.ImgProcess);
+            //Thread proc1 = new Thread(Program.ImgProcess);
 
             // Start the threads
             proc0.Start(0);
-            proc1.Start(1);
+            //proc1.Start(1);
 
             // Wait for both threads to finish
             proc0.Join();
-            proc1.Join();
+            //proc1.Join();
         }
     }
 }

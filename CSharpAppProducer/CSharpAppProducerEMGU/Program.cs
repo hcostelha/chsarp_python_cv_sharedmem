@@ -15,6 +15,13 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using System.Threading.Tasks;
 
+static class Constants
+{
+    // Amount of sleep/wait time [ms]
+    public const int WAIT_TIME = 30;
+}
+
+
 public class MultiProcessShMemWithPython
 {
     public static unsafe void Main()
@@ -226,12 +233,14 @@ public class MultiProcessShMemWithPython
                 CvInvoke.Imshow(bgr_wname, bgr_image);
                 for (i = 0; i < NUM_FRAME_BUFFERS; i++)
                     CvInvoke.Imshow(gray_wname + $" {i}", gray_images[i]);
-                int key = CvInvoke.WaitKey(5);  //Wait for the key pressing event
+                int key = CvInvoke.WaitKey(Constants.WAIT_TIME);  //Wait for the key pressing event
                 if (key == 'q')
                 {
                     Console.WriteLine("Exiting...");
                     break;
                 }
+#else
+                Thread.Sleep(Constants.WAIT_TIME);
 #endif
 #if DEBUG_FPS
                 // Compute the FPS

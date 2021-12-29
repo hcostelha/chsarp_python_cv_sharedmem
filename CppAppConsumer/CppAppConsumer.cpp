@@ -19,7 +19,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 
 // Set to true if you whish to see the captured and shared image windows
-#define DEBUG_WINDOWS true
+#define DEBUG_WINDOWS false
 
 // Set to true if you wish to see the FPS being shared
 #define DEBUG_FPS true
@@ -227,12 +227,13 @@ void imgProcess(int proc_num)
         ReleaseMutex(mtx);
 
         // Process images
-        cv::aruco::detectMarkers(gray_images[frame_idx],
-                                 aruco_dict,
-                                 corners,
-                                 ids,
-                                 aruco_parameters,
-                                 rejectedCandidates);
+        for (i = 0; i < 10; i++)
+            cv::aruco::detectMarkers(gray_images[frame_idx],
+                                     aruco_dict,
+                                     corners,
+                                     ids,
+                                     aruco_parameters,
+                                     rejectedCandidates);
 #if DEBUG_WINDOWS
         // Show images for debugging purposes
         cv::imshow(bgr_wname, bgr_image);
@@ -243,7 +244,7 @@ void imgProcess(int proc_num)
 #if DEBUG_FPS
         // Compute the FPS
         num_frames += 1;
-        if (num_frames == 1000)
+        if (num_frames == 100)
         {
             int64 endTime = cv::getTickCount();
             std::cout << "Process " << proc_num << ": " << 

@@ -20,7 +20,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 
 // Set to true if you whish to see the captured and shared image windows
-#define DEBUG_WINDOWS true
+#define DEBUG_WINDOWS false
 
 // Set to true if you wish to see the FPS being shared
 #define DEBUG_FPS true
@@ -32,6 +32,8 @@
 // Maximum buffer size for incoming messages through the named pipe
 constexpr auto MAX_NUM_BYTES = 256;
 
+// Amount of sleep/wait time [ms]
+#define WAIT_TIME 30
 
 int main()
 {
@@ -289,11 +291,13 @@ int main()
 			std::cout << "Exiting..."<< std::endl;
 			break;
 		}
+#else
+		std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
 #endif
 #if DEBUG_FPS
 		// Compute the FPS
 		num_frames += 1;
-		if (num_frames == 1000)
+		if (num_frames == 100)
 		{
 			int64 endTime = cv::getTickCount();
 			std::cout << "Producer: " <<

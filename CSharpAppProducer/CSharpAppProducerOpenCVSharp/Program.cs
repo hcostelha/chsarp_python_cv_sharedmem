@@ -1,6 +1,6 @@
 ﻿// Define this if you whish to see the captured and shared image windows
-#define DEBUG_WINDOWS
-//#undef DEBUG_WINDOWS
+//#define DEBUG_WINDOWS
+#undef DEBUG_WINDOWS
 
 // Define this if you wish to see the FPS being shared
 #define DEBUG_FPS
@@ -17,6 +17,13 @@ using System.IO.MemoryMappedFiles;
 
 using OpenCvSharp;
 using System.Threading.Tasks;
+
+static class Constants
+{
+    // Amount of sleep/wait time [ms]
+    public const int WAIT_TIME = 30;
+}
+
 
 public class MultiProcessShMemWithPython
 {
@@ -241,17 +248,19 @@ public class MultiProcessShMemWithPython
                 bgr_window.ShowImage(bgr_image);
                 for (i = 0; i < NUM_FRAME_BUFFERS; i++)
                     gray_windows[i].ShowImage(gray_images[i]);
-                int key = Cv2.WaitKey(5);  //Wait for the key pressing event
+                int key = Cv2.WaitKey(Constants.WAIT_TIME);  //Wait for the key pressing event
                 if (key == 'q')
                 {
                     Console.WriteLine("Exiting...");
                     break;
                 }
+#else
+                Thread.Sleep(Constants.WAIT_TIME);
 #endif
 #if DEBUG_FPS
                 // Compute the FPS
                 num_frames += 1;
-                if (num_frames == 1000)
+                if (num_frames == 100)
                 {
                     var endTime = Cv2.GetTickCount();
                     Console.WriteLine($"Producer: {num_frames / ((endTime - startTime) / Cv2.GetTickFrequency()):0.00} FPS");

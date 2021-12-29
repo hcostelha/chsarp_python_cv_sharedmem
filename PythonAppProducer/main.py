@@ -8,7 +8,7 @@ import numpy as np
 import cv2 as cv
 
 # Set to True if you whish to see the captured and shared image windows
-DEBUG_WINDOWS = True
+DEBUG_WINDOWS = False
 
 # Set to false if you wish to see the FPS being shared
 DEBUG_FPS = True
@@ -16,6 +16,8 @@ DEBUG_FPS = True
 # Either read the frames from a video file or from a camera
 USE_VIDEO = True
 
+# Amount of sleep/wait time [s]
+WAIT_TIME = 0.030
 
 # Producer process
 if __name__ == '__main__':
@@ -234,10 +236,12 @@ if __name__ == '__main__':
             if cv.waitKey(5) == 27:  # Wait for the key pressing event
                 print('Exiting...')
                 break
+        else:
+            time.sleep(WAIT_TIME)
         if DEBUG_FPS:
             # Compute the FPS
             num_frames += 1
-            if num_frames == 1000:
+            if num_frames == 100:
                 end_time = time.time()
                 print(f'Producer: {num_frames / (end_time - start_time):.2f} FPS')
                 num_frames = 0

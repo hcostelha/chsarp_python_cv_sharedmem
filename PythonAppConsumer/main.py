@@ -15,7 +15,7 @@ import numpy as np
 import cv2 as cv
 
 # Set to True if you whish to see the captured and shared image windows
-DEBUG_WINDOWS = True
+DEBUG_WINDOWS = False
 
 # Set to false if you wish to see the FPS being shared
 DEBUG_FPS = True
@@ -190,9 +190,10 @@ def img_process(proc_num):
         # Process frame (detect ARUCO marker)
         # We do not need to yse the shared_frame_arr lock, since the frame will
         # not be updated while we are using it.
-        corners, ids, rejectedImgPoints = \
-            cv.aruco.detectMarkers(shared_gray_frames[frame_idx],
-                                   aruco_dict, parameters=aruco_parameters)
+        for i in range(10):
+            corners, ids, rejectedImgPoints = \
+                cv.aruco.detectMarkers(shared_gray_frames[frame_idx],
+                                    aruco_dict, parameters=aruco_parameters)
 
         if DEBUG_WINDOWS:
             # Debug code: show the result and update the FPS indo
@@ -201,7 +202,7 @@ def img_process(proc_num):
             cv.waitKey(5)
         if DEBUG_FPS:
             num_frames += 1
-            if num_frames == 1000:
+            if num_frames == 100:
                 end = time.time()
                 print(f'Process {proc_num}: {num_frames/(end-start):.2f} FPS')
                 num_frames = 0
