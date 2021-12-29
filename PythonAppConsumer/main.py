@@ -21,7 +21,7 @@ DEBUG_WINDOWS = True
 DEBUG_FPS = True
 
 
-# Function to run consumer process 2
+# Function to run consumer processes
 def img_process(proc_num):
     '''
         proc_num: Process number (for the socket connection);
@@ -30,12 +30,35 @@ def img_process(proc_num):
         cv.namedWindow(f'(Python-Consumer) Process {proc_num}')
     MAX_NUM_BYTES = 200
 
+    # Aruco detector configuration
+    # @param self Detector parameters.
+    aruco_parameters = cv.aruco.DetectorParameters_create()
+    if proc_num == 0:  # Process 0
+        aruco_dict = cv.aruco.Dictionary_get(cv.aruco.DICT_6X6_250)
+    else:  # Process 1
+        ## Set dictionary size depending on the aruco marker selected
+        aruco_parameters.adaptiveThreshConstant = 10
+        aruco_parameters.minCornerDistanceRate = 0.005
+        aruco_parameters.minMarkerDistanceRate = 0.005
+        aruco_parameters.polygonalApproxAccuracyRate = 0.01
+        aruco_parameters.cornerRefinementMethod = cv.aruco.CORNER_REFINE_SUBPIX
+        aruco_parameters.cornerRefinementWinSize = 1
+        aruco_parameters.cornerRefinementMaxIterations = 100
+        aruco_parameters.maxErroneousBitsInBorderRate = 0.1 
+        ## Set dictionary size depending on the aruco m arker selected
+        aruco_dict = cv.aruco.Dictionary_get(cv.aruco.DICT_4X4_250)
+        
+
     # Get access to the shared memory. We will do this in two runs, the first
     # to get the base sizes, and then the real deal.
     # Check the C# Producer code for more information on this
     shared_mem = mmap.mmap(fileno=-1, tagname='SharedMemory',
-                           length=5*4, access=mmap.ACCESS_WRITE)
-
+                           length=4  # int frame_height
+                                  + 4  # int frame_width
+                                  + 4  # int bgr_frame_step
+                                  + 4  # int gray_frame_step
+                                  + 1,  # byte num_shared_buffers
+                           access=mmap.ACCESS_WRITE)
     offset = 0
 
     # shared_frame_height
@@ -72,14 +95,17 @@ def img_process(proc_num):
     shared_num_frame_buffers = \
         np.frombuffer(buffer=shared_mem, dtype=np.uint8, count=1, offset=offset)
     num_frame_buffers = shared_num_frame_buffers[0]
-    offset += 4
+    offset += 1
 
     # Reopen shared memory with the correct size
     shared_mem.close()
     shared_mem = mmap.mmap(
         fileno=-1, tagname='SharedMemory',
-        length=5*4 + 1 + num_frame_buffers + bgr_frame_size + 
-               num_frame_buffers*gray_frame_size,
+        length=4*4 + 1 +  # Previous memory region
+               + 1  # byte shared_latest_cam_buffer_idx
+               + num_frame_buffers  # byte shared_buffers_idx_in_use[NUM_FRAME_BUFFERS]
+               + bgr_frame_size  # shared_rgb_frame[height, width, 3] 
+               + num_frame_buffers*gray_frame_size,  # shared_gray_frame[height, width, NUM_FRAME_BUFFERS]
         access=mmap.ACCESS_WRITE)
 
     # shared_latest_cam_buffer_idx
@@ -115,7 +141,7 @@ def img_process(proc_num):
         offset += gray_frame_size
 
     # Connect to producer socket for this consumer
-    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', 0)
+    f = open(r'\\.\pipe\pipe'+f'{proc_num}', 'rb', buffering=0)
 
     # Get the shared mutex
     mutex = namedmutex.NamedMutex('ARMutex', existing=True, acquire=False)
@@ -126,13 +152,25 @@ def img_process(proc_num):
     start = time.time()
     num_frames = 0
     frame_idx = -1
+    msg = bytearray(MAX_NUM_BYTES)
     while True:
-        # Wait for a signal that a new frame is available
-        msg = f.read(MAX_NUM_BYTES)
-        if msg.__len__() == 0:
-            print("No bytes read!")
-        elif msg.__len__() == MAX_NUM_BYTES:
+        # Wait for a signal that a new frame is available. This is a blocking
+        # call. The message contents per se are not being used currently.
+        try:
+            result = f.readinto(msg)
+        except Exception as e:
+            print(f'Got an error reading from the pipe, exiting: {e}')
+            break
+        if result == 0:
+            print("Pipe closed, exiting...")
+            break
+        elif result == MAX_NUM_BYTES:
             print("Not all bytes might have beed read!")
+
+        # If we did not get the '1', somethin is wrong!!
+        if msg[0] != 1:
+            print('Unexpected pipe message...')
+            continue
 
         # Check the index of the latest frame and signal its use
         mutex.acquire(4)
@@ -149,42 +187,40 @@ def img_process(proc_num):
             continue
         mutex.release()
 
-        # Process frame
+        # Process frame (detect ARUCO marker)
         # We do not need to yse the shared_frame_arr lock, since the frame will
         # not be updated while we are using it.
-        if proc_num == 1:
-            cv.Canny(shared_gray_frames[frame_idx], 100, 50, edges=result_img)
-            time.sleep(0.05) # To evaluate different processing times
-        else:
-            np.subtract(255, shared_gray_frames[frame_idx], out=result_img)
+        corners, ids, rejectedImgPoints = \
+            cv.aruco.detectMarkers(shared_gray_frames[frame_idx],
+                                   aruco_dict, parameters=aruco_parameters)
 
         if DEBUG_WINDOWS:
             # Debug code: show the result and update the FPS indo
-            cv.imshow(f'(Python-Consumer) Process {proc_num}', result_img)
+            cv.imshow(f'(Python-Consumer) Process {proc_num}', shared_gray_frames[frame_idx])
+            #cv.imshow(f'(Python-Consumer) Process {proc_num}', result_img)
             cv.waitKey(5)
         if DEBUG_FPS:
             num_frames += 1
-            if num_frames == 100:
+            if num_frames == 1000:
                 end = time.time()
                 print(f'Process {proc_num}: {num_frames/(end-start):.2f} FPS')
                 num_frames = 0
                 start = end
-
+    f.close()
+    shared_mem.close()
 
 # Producer process
 if __name__ == '__main__':
     # Create two processes
-    proc1 = mp.Process(target=img_process, name='Process1',
-                       args=(1,))
-    proc2 = mp.Process(target=img_process, name='Process2',
-                       args=(2,))
+    proc0 = mp.Process(target=img_process, name='Process0',
+                       args=(0,))
+    #proc1 = mp.Process(target=img_process, name='Process1',
+    #                   args=(1,))
 
     # Start the two processes
-    proc1.start()
-    proc2.start()
+    proc0.start()
+    #proc1.start()
 
     # Wait until nboth processes are finished
-    while True:
-        if (proc1.is_alive is False) and (proc2.is_alive is False):
-            break
-        #time.sleep(1.0)
+    proc0.join()
+    #proc1.join()
