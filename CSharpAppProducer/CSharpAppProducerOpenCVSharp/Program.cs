@@ -8,7 +8,7 @@
 
 // Use a camera or video feed
 #define USE_VIDEO  // Get images from a video feed
-//#undef USE_VIDEO  / Get images from a camera feed
+//#undef USE_VIDEO  // Get images from a camera feed
 
 using System;
 using System.Threading;
